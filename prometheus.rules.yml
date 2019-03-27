@@ -1,0 +1,5 @@
+groups:
+  - name: node
+    rules:
+      - record: cpu:node_cpu_seconds_total:rate5m
+        expr: rate(node_cpu_seconds_total{cpu="0", mode="user"}[5m])

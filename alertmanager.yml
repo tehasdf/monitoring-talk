@@ -1,0 +1,8 @@
+route:
+  receiver: dummy
+
+receivers:
+  - name: dummy
+
+
+# https://prometheus.io/docs/alerting/configuration/

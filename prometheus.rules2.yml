@@ -1,0 +1,11 @@
+groups:
+  - name: default
+    rules:
+    - alert: LotsOfRequests
+      expr: my_requests_total > 10
+      for: 2s
+      labels:
+        severity: critical
+      annotations:
+        summary: "Uwaga {{ $labels.instance }}"
+        description: "{{ $labels.instance }} blabla {{ $labels.job }}"

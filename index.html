@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>reveal.js – The HTML Presentation Framework</title>
+
+        <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+        <meta name="author" content="Hakim El Hattab">
+
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <link rel="stylesheet" href="css/reveal.css">
+        <link rel="stylesheet" href="css/black.css" id="theme">
+
+        <!-- Theme used for syntax highlighting of code -->
+        <link rel="stylesheet" href="css/zenburn.css">
+        <script>
+            var link = document.createElement( 'link' );
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = window.location.search.match( /print-pdf/gi ) ? 'css/pdf.css' : 'css/paper.css';
+            document.getElementsByTagName( 'head' )[0].appendChild( link );
+        </script>
+
+    </head>
+
+    <body>
+
+        <div class="reveal">
+
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+                <section>
+                    <h1>Monitoring</h1>
+                    <p>Łukasz Maksymczuk</p>
+                    <p>Codilime</p>
+                    <p class="fragment">Cloudify team</p>
+                </section>
+
+                <section>
+                    <h2>Requirements</h2>
+                    <p class="fragment">Fetching metrics</p>
+                    <p class="fragment">Storage</p>
+                    <p class="fragment">Instrumentation</p>
+                    <p class="fragment">Alerting</p>
+                    <p class="fragment">Graphs</p>
+                </section>
+
+                <section>
+                    <h2>What to use?</h2>
+                    <p class="fragment">Prometheus</p>
+                    <p class="fragment">InfluxData</p>
+                    <p class="fragment">...nagios?</p>
+                    <p class="fragment">Grafana</p>
+                </section>
+
+                <section>
+                    <h2>Monitoring with Prometheus</h2>
+                    <pre><code class="hljs" data-trim>
+                        global:
+                          scrape_interval:     15s
+                        scrape_configs:
+                          - job_name: 'prometheus'
+                            scrape_interval: 5s
+                            static_configs:
+                              - targets: ['localhost:9090']
+                    </code></pre>
+                </section>
+                
+                <section>
+                    <h2>Monitoring with Prometheus</h2>
+                    <pre><code class="hljs" data-trim>
+                      - job_name: 'node'
+                        scrape_interval: 5s
+                        static_configs:
+                          - targets: ['localhost:9100']
+                    </code></pre>
+                </section>
+                    <aside class="notes">
+                        <p>
+                            Znaczna część prezentacji to hands-on przykłady/dema. Kolejne slajdy zawierają notatki używane w przykładach. Te notatki nie były widoczne w oryginalnej prezentacji.
+                        </p>
+                        <p>Źródła prezentacji są na <a href="https://github.com/tehasdf/monitoring-talk">https://github.com/tehasdf/monitoring-talk</a>.
+                        Źródło samej prezentacji (i notatki) w .html jest być może mało ciekawe, ale warto spojrzeć na przykładowe/użyte w przykładach configi .yml
+                        </p>
+                    </aside>
+                <section>
+
+                   <aside class="notes">
+                        <p>
+                        Uruchamianie prometheusa: <br />
+                        <pre>
+                            docker run --net host prom/prometheus
+                            docker run --net host -v /tmp/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+                        </pre>
+                        </p>
+                        
+                        <p>
+                            UI: http://127.0.0.1:9090/metrics
+                        </p>
+                        <p>
+                            Showcase możliwości query language prometheusa:
+                            <pre>
+                                # po prostu ściągnij wartość
+                                promhttp_metric_handler_requests_total
+                                # wartości z ostatnich 5 minut - range vector
+                                promhttp_metric_handler_requests_total[5m]
+                                # interval - 1m
+                                promhttp_metric_handler_requests_total[5m:1m]
+                                # funkcje - suma, średnia
+                                sum(promhttp_metric_handler_requests_total)
+                                avg(promhttp_metric_handler_requests_total)
+                                # rate - wymaga range vector
+                                rate(promhttp_metric_handler_requests_total[5m])
+                            </pre>
+                        </p>
+                        <p>
+                            Node exporter - metryki hostów
+                            <pre>
+                                docker run --net host prom/node-exporter
+                                docker run --net host prom/node-exporter --web.listen-address=":9101"
+                                # przykładowe query, z filtrem
+                                node_cpu_seconds_total{cpu="1"}[5m]
+                                rate(node_cpu_seconds_total{cpu="0", mode="user"}[5m])
+                            </pre>
+                        </p>
+                        <p>
+                            Uzycie z grafaną - ma wbudowane source dla prometheusa
+                            <pre>
+                                docker run --net host grafana/grafana
+                            </pre>
+                        </p>                        
+
+                        <p>
+                            Przykład instrumentacji aplikacji w pythonie
+                            <pre>
+                                docker build -f app.dockerfile . -t app1
+                                docker run --net host -v $(pwd):/app:ro app1 uwsgi --http 0.0.0.0:5000 --wsgi-file app.py --callable app
+                            </pre>
+                        </p>
+                        <p>
+                            Alerty - alertmanager
+                            <pre>
+                                docker run --net host -v $(pwd)/alertmanager.yml:/tmp/alertmanager.yml prom/alertmanager  --config.file=/tmp/alertmanager.yml
+
+                                docker run --net host -v $(pwd)/prometheus6.yml:/etc/prometheus/prometheus.yml prom/prometheus --web.listen-address=:8080 --config.file=/etc/prometheus/prometheus.yml
+                            </pre>
+                        </p>
+                   </aside>
+                </section>
+
+                <section>
+                    <h2>Monitoring with Influx</h2>
+                   <aside class="notes">
+                        <pre>
+                            docker exec -it tik_influxdb_1 influx --precision rfc3339
+
+                            show field keys from cpu;
+                            show tag keys from cpu;
+
+                            select cpu, mean(usage_idle) from cpu;
+                            select mean(usage_idle) from cpu group by cpu, time(10m);
+
+                            docker run --net host influxdb
+                            telegraf --config telegraf.conf
+                            SELECT cumulative_sum(value) FROM "request" 
+                        </pre>
+                   </aside>
+                </section>
+
+
+                <section>
+                    <h2>Influx + Prometheus?</h2>
+                   <aside class="notes">
+                        Połączenie przez telegraf z input/output pluginem, https://github.com/influxdata/telegraf/tree/master/plugins/inputs/prometheus
+                   </aside>
+                </section>
+
+                <section>
+                    <h2>Q&A</h2>
+                </section>
+
+                <section>
+                    <h2>Thanks!</h2>
+                </section>
+
+            </div>
+
+        </div>
+
+        <script src="js/head.min.js"></script>
+        <script src="js/reveal.js"></script>
+
+        <script>
+
+            // More info https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+                showNotes: 'separate-page',
+                pdfMaxPagesPerSlide: 1,
+                pdfSeparateFragments: false,
+                transition: 'slide', // none/fade/slide/convex/concave/zoom
+                dependencies: [
+                    { src: 'js/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'js/notes.js', async: true }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>

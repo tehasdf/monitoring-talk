@@ -1,0 +1,9 @@
+Wstep
+Intro o prometheusie
+Intro o influxdata
+Przyklad: influx + bare
+Przyklad: influx + kubernetes
+Przyklad: prometheus + bare
+Przyklad: influx + prometheus
+Przyklad: prometheus + kubernetes
+Podsumowanie?
